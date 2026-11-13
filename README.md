@@ -1,4 +1,30 @@
-# UltraEP
+# UltraEP ❤️ PaddlePaddle
+
+> [!NOTE]
+>
+> This repo is a fork of the original UltraEP project, with modifications to integration with PaddlePaddle. Currently only the solve and reroute functions are available.
+>
+> **Installation**
+>
+> ```bash
+> pip install paddlepaddle-gpu  # Install PaddlePaddle with GPU support, refer to https://www.paddlepaddle.org.cn/install/quick for more details
+> git clone https://github.com/PFCCLab/UltraEP.git
+> cd UltraEP
+> python setup.py build
+> ```
+>
+> **Usage**
+>
+> ```python
+> import paddle
+> paddle.enable_compat(scope={"ultra_ep"})  # Enable torch proxy before importing ultra_ep
+> import ultra_ep._C
+> # use ultra_ep
+> ```
+
+The original README.md content is as follows:
+
+---
 
 [![Paper](https://img.shields.io/badge/Paper-arXiv-B31B1B?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2606.04101)
 [![Blog](https://img.shields.io/badge/Blog-v1.0.0-0A84FF)](https://dots-infra.github.io/UltraEP)

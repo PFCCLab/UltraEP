@@ -5,8 +5,8 @@ import subprocess
 import setuptools
 
 from pathlib import Path
-import torch
-from torch.utils.cpp_extension import BuildExtension, CUDAExtension
+import paddle
+from paddle.utils.cpp_extension import BuildExtension, CUDAExtension
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -33,13 +33,12 @@ def get_package_version():
 
 
 def find_cpp_cuda_sources(root_dir="csrc"):
-    valid_exts = {".cpp", ".cc", ".cu"}
-    source_files = []
-    for dirpath, _, filenames in os.walk(root_dir):
-        for fname in filenames:
-            if Path(fname).suffix in valid_exts:
-                source_files.append(str(Path(dirpath) / fname))
-    return source_files
+    return [
+        "csrc/python_api.cpp",
+        "csrc/kernels/reroute.cu",
+        "csrc/kernels/placement.cu",
+        "csrc/kernels/legacy/placement_cpu.cpp",
+    ]
 
 
 if __name__ == "__main__":
@@ -56,30 +55,9 @@ if __name__ == "__main__":
     sources = find_cpp_cuda_sources("csrc")
     include_dirs = ["csrc/"]
 
-    # Auto-detect CUDA arch if not explicitly set
-    if "TORCH_CUDA_ARCH_LIST" not in os.environ:
-        result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=compute_cap", "--format=csv,noheader"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        compute_cap = result.stdout.strip().splitlines()[0].strip()
-        sm = int(compute_cap.replace(".", ""))
-        if sm == 90:
-            os.environ["TORCH_CUDA_ARCH_LIST"] = "9.0"
-        elif sm == 100:
-            os.environ["TORCH_CUDA_ARCH_LIST"] = "10.0"
-        else:
-            raise RuntimeError(
-                f"Unsupported CUDA compute capability: {compute_cap} (SM{sm}). "
-                "Only SM90 and SM100 are supported. "
-                "Set TORCH_CUDA_ARCH_LIST manually to override."
-            )
-
     nvcc_flags.extend(["--ptxas-options=--register-usage-level=10"])
     # Compilation workaround for CUDA 13.x
-    if torch.version.cuda and torch.version.cuda.startswith("13."):
+    if paddle.version.cuda and paddle.version.cuda.startswith("13."):
         include_dirs.extend(["/usr/local/cuda/include/cccl/"])
 
     # Disable aggressive PTX instructions
@@ -91,13 +69,14 @@ if __name__ == "__main__":
     extra_compile_args = {
         "cxx": cxx_flags,
         "nvcc": nvcc_flags,
+        "nvcc_dlink": ["-dlink"],
     }
     # Summary
     print("Build summary:")
     print(f" > Sources: {sources}")
     print(f" > Includes: {include_dirs}")
     print(f" > Compilation flags: {extra_compile_args}")
-    print(f' > Arch list: {os.environ["TORCH_CUDA_ARCH_LIST"]}')
+    print(f' > Arch list: {os.getenv("PADDLE_CUDA_ARCH_LIST")}')
     print()
 
     setuptools.setup(
@@ -111,7 +90,6 @@ if __name__ == "__main__":
                 include_dirs=include_dirs,
                 sources=sources,
                 extra_compile_args=extra_compile_args,
-                dlink=True,
             )
         ],
         cmdclass={

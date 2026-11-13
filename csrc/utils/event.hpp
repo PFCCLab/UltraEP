@@ -44,9 +44,11 @@ static void stream_wait(const at::cuda::CUDAStream& s, const EventHandle& event)
 
 namespace event {
 static void register_apis(pybind11::module_& m) {
+#ifndef PADDLE_WITH_CUDA
     pybind11::class_<EventHandle>(m, "EventHandle")
         .def(pybind11::init<>())
         .def("current_stream_wait", &EventHandle::current_stream_wait);
+#endif
 }
 }  // namespace event
 

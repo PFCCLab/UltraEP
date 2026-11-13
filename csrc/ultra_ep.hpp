@@ -361,6 +361,7 @@ public:
 };
 
 static void register_apis(pybind11::module_& m) {
+#ifndef PADDLE_WITH_CUDA
     m.def("get_replica_buffer_layout", &get_replica_buffer_layout);
     m.def("nvl_all_gather_loads", [](torch::Tensor output, torch::Tensor input, torch::Tensor peers, int rank) {
         EP_HOST_ASSERT(input.is_cuda() && input.scalar_type() == torch::kInt32 && input.dim() == 1);
@@ -523,6 +524,7 @@ static void register_apis(pybind11::module_& m) {
         .def("get_global_logical_expert_loads_tensor", &Manager::get_global_logical_expert_loads_tensor)
         .def("get_local_expert_loads_tensor", &Manager::get_local_expert_loads_tensor)
         .def("get_expert_loads_per_rank_tensor", &Manager::get_expert_loads_per_rank_tensor);
+#endif
 
     m.def(
         "solve_placement_for_test",
